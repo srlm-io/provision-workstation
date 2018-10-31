@@ -1,42 +1,6 @@
 # Here is a sample command to run this playbook:
 # ansible-playbook provision-workstation.yml  --ask-sudo-pass
 
-
-# Do I need to add this to .bashrc?
-# ANSIBLE_VAULT_PASSWORD_FILE=~/.ssh/farmhouse_ansible_vault_password.dat
-
-# git config --global user.name "Cody Lewis"
-# git config --global user.email "cody@formlabs.com"
-
-# Line in file bashrc:
-# xset r rate 150 60
-# https://unix.stackexchange.com/a/216238
-
-# gnome-terminal preferences
-#
-# Option 2:
-# https://docs.npmjs.com/getting-started/fixing-npm-permissions
-#
-#
-# git config --global push.followTags true
-#
-#
-# :0: UserWarning: You do not have a working installation of the service_identity module: 'No module named service_identity'.  Please install it from <https://pypi.python.org/pypi/service_identity> and make sure all of its dependencies are satisfied.  Without the service_identity module, Twisted can perform only rudimentary TLS client hostname verification.  Many valid certificate/hostname mappings may be rejected.
-#
-#
-#
-#
-# Extensions to install:
-# * https://extensions.gnome.org/extension/120/system-monitor/
-# * Workspace indicator
-#
-#
-#
-# sudo groupadd docker
-# sudo gpasswd -a $USER docker
-# sudo gpasswd -a $USER dialout
-
-
 # Fix the firefox input form backgrounds being grey on white
 # Put this in ~/.mozilla/firefox/<profile_dir>/chrome/userContent.css
 # input:not(.urlbar-input):not(.textbox-input):not(.form-control):not([type='checkbox']):not([type='radio']), textarea, select {
@@ -54,17 +18,9 @@
 # Edit /etc/cups-browsed.conf, changing the BrowseRemoteProtocols CUPS dnssd line to BrowseRemoteProtocols none
 # https://askubuntu.com/questions/918462/ubuntu-17-04-printer-added-notifications-under-gnome
 
-# Increase inotify watches
-# fs.inotify.max_user_watches=524288
-# /etc/sysctl.conf
-# sysctl -p
-# https://unix.stackexchange.com/a/13757
-#
-#
-#
-# Edit ~/.nanorc
-# set autoindent
-
+# TODO:
+# Install Standard Notes
+# Install Etcher
 
 
 - hosts: localhost
@@ -84,14 +40,35 @@
                 PS1=${ORIG}${TITLE}
             }
 
-    - name: Add the custom program bin path
+    - name: Add lines into .bashrc
       lineinfile:
         path: ~/.bashrc
-        line: PATH=$PATH:/opt/custombin/bin
+        line: "{{ item }}"
+      with_items:
+        - export PATH=$PATH:/opt/bin
+        - export EDITOR=/bin/nano
+
+        # Clip to clipboard
+        - alias clip="xclip -selection c"
+
+        # Useful tool to get 1 line names of PRs.
+        - alias gitpoky="git --no-pager log --first-parent --format=\"%ad %H %s\" --date=short --reverse $@ | tail -n 50"
+        - alias gitupdate="git checkout master && git pull --rebase upstream master"
+
+        # Set keyboard delays (lower them!)
+        - xset r rate 150 60
+
+    - name: Add lines to .nanorc
+      lineinfile:
+        path: ~/.nanorc
+        create: yes
+        line: set autoindent
 
 - hosts: localhost
   gather_facts: False
   become: yes
+  vars:
+    user: "{{ lookup('env','USER') }}"
   tasks:
     - name: Create folder for custom programs
       file:
@@ -100,21 +77,19 @@
 
     - name: Copy custom programs
       copy:
-        src: custombin/
-        dest: /opt/custombin/
+        src: bin
+        dest: /opt/
 
     - name: Make custom programs executable
       file:
-        path: /opt/custombin/bin/
+        path: /opt/bin/
         mode: 0755
         recurse: yes
-      tags:
-        - debug
 
     - name: add the Atom package repo signing key
       shell: wget -qO- https://packagecloud.io/AtomEditor/atom/gpgkey | apt-key add -
 
-    - name: add the Node.js deb repository
+    - name: add the Atom deb repository
       shell: echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list
 
     - name: Update cache (with no fail because on old computer some things didn't download, etc.)
@@ -155,14 +130,13 @@
         - picocom
         - poedit
         - postgresql-client
-        - synaptic
         - tftp
         - tmux
         - traceroute
         - tree
         - ttf-mscorefonts-installer
-        - ubuntu-restricted-extras
         - vagrant
+        - virtualbox
         - wireshark
         - whois
         - xclip
@@ -171,15 +145,11 @@
         - python3-pip
         - python3-dev
         - build-essential
-        # - virtualbox-5.1
 
         # Node things
         - nodejs
         - npm
         - build-essential
-
-        # PreForm things
-        - libavahi-compat-libdnssd1
 
         # For gnome shell system monitor applet: https://github.com/paradoxxxzero/gnome-shell-system-monitor-applet
         - gir1.2-gtop-2.0
@@ -188,13 +158,6 @@
 
         # For atom editor things
         - shellcheck
-
-        - virtualbox
-
-        # System Monitor gnome extension things
-        - gir1.2-gtop-2.0
-        - gir1.2-networkmanager-1.0
-        - gir1.2-clutter-1.0
 
     - name: Update pip
       pip:
@@ -208,20 +171,20 @@
         state: latest
         executable: pip3
       with_items:
+        - ansible-lint
         - autoflake
         - autopep8
         - awscli
         - flake8
         - jupyter
         - matplotlib
-        - mypy
-        - pyinotify
-        - pytz
-        - ansible-lint
-        - pyserial
         - mock
+        - mypy
         - psycopg2
         - pydocstyle
+        - pyinotify
+        - pyserial
+        - pytz
 
     - name: Install Nodejs packages
       npm:
@@ -232,24 +195,45 @@
         - eslint
         - jshint
 
+    - name: Adding existing user "{{ user }}" to groups
+      user:
+        name: "{{ user }}"
+        groups: "{{ item }}"
+        append: yes
+      with_items:
+        - dialout
+        - docker
 
+    # https://unix.stackexchange.com/a/13757
+    - name: Increase inotify watches
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^fs.inotify.max_user_watches='
+        line: fs.inotify.max_user_watches=1250000
 
+- hosts: localhost
+  gather_facts: False
+  become: no
+  tasks:
+    - name: Set up git config settings
+      shell: "{{ item }}"
+      with_items:
+        - git config --global submodule.recurse true
+        - git config --global push.followTags true
+        - git config --global push.default upstream
+        - git config --global user.name "Cody Lewis"
+        # git config --global user.email ""
 
-# PreForm things?
-# qml
-# qml-module-qtgraphicaleffects
-# qml-module-qt-labs-folderlistmodel
-# qml-module-qt-labs-settings
-# qml-module-qtqml-statemachine
-# qml-module-qtquick2
-# qml-module-qtquick-controls
-# qml-module-qtquick-dialogs
-# qml-module-qtquick-layouts
-# qml-module-qtquick-localstorage
-# qml-module-qtquick-privatewidgets
-# qml-module-qtquick-window2
-# qml-module-qtquick-xmllistmodel
-# qt5-default
-# qtdeclarative5-dev
-#
-#
+    - debug:
+        msg: "Please run git config --global user.email with the prefered email."
+
+    - name: Provide shell extension URLs to install
+      debug:
+        msg: "{{ item }}"
+      with_items:
+        - https://extensions.gnome.org/extension/120/system-monitor/
+        - https://extensions.gnome.org/extension/15/alternatetab/
+        - https://extensions.gnome.org/extension/307/dash-to-dock/
+        - https://extensions.gnome.org/extension/906/sound-output-device-chooser/
+        - https://extensions.gnome.org/extension/21/workspace-indicator/
+        - https://extensions.gnome.org/extension/28/gtile/

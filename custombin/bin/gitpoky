@@ -1,2 +1,0 @@
-#!/bin/bash
-git --no-pager log --first-parent --format="%ad %H %s" --date=short --reverse | tail -n 50
