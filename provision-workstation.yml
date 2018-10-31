@@ -1,0 +1,255 @@
+# Here is a sample command to run this playbook:
+# ansible-playbook provision-workstation.yml  --ask-sudo-pass
+
+
+# Do I need to add this to .bashrc?
+# ANSIBLE_VAULT_PASSWORD_FILE=~/.ssh/farmhouse_ansible_vault_password.dat
+
+# git config --global user.name "Cody Lewis"
+# git config --global user.email "cody@formlabs.com"
+
+# Line in file bashrc:
+# xset r rate 150 60
+# https://unix.stackexchange.com/a/216238
+
+# gnome-terminal preferences
+#
+# Option 2:
+# https://docs.npmjs.com/getting-started/fixing-npm-permissions
+#
+#
+# git config --global push.followTags true
+#
+#
+# :0: UserWarning: You do not have a working installation of the service_identity module: 'No module named service_identity'.  Please install it from <https://pypi.python.org/pypi/service_identity> and make sure all of its dependencies are satisfied.  Without the service_identity module, Twisted can perform only rudimentary TLS client hostname verification.  Many valid certificate/hostname mappings may be rejected.
+#
+#
+#
+#
+# Extensions to install:
+# * https://extensions.gnome.org/extension/120/system-monitor/
+# * Workspace indicator
+#
+#
+#
+# sudo groupadd docker
+# sudo gpasswd -a $USER docker
+# sudo gpasswd -a $USER dialout
+
+
+# Fix the firefox input form backgrounds being grey on white
+# Put this in ~/.mozilla/firefox/<profile_dir>/chrome/userContent.css
+# input:not(.urlbar-input):not(.textbox-input):not(.form-control):not([type='checkbox']):not([type='radio']), textarea, select {
+#     -moz-appearance: none !important;
+#     background-color: white;
+#     color: black;
+# }
+
+# #downloads-indicator-counter {
+#     color: white;
+# }
+#
+#
+# Stop the stupid printer notifications:
+# Edit /etc/cups-browsed.conf, changing the BrowseRemoteProtocols CUPS dnssd line to BrowseRemoteProtocols none
+# https://askubuntu.com/questions/918462/ubuntu-17-04-printer-added-notifications-under-gnome
+
+# Increase inotify watches
+# fs.inotify.max_user_watches=524288
+# /etc/sysctl.conf
+# sysctl -p
+# https://unix.stackexchange.com/a/13757
+#
+#
+#
+# Edit ~/.nanorc
+# set autoindent
+
+
+
+- hosts: localhost
+  gather_facts: False
+  become: no
+  tasks:
+    - name: Add the set-title bash function
+      blockinfile:
+        path: ~/.bashrc
+        block: |
+            # Taken from http://unix.stackexchange.com/questions/177572/how-to-rename-terminal-tab-title-in-gnome-terminal
+            function set-title() {
+                if [[ -z "$ORIG" ]]; then
+                    ORIG=$PS1
+                fi
+                TITLE="\[\e]2;$@\a\]"
+                PS1=${ORIG}${TITLE}
+            }
+
+    - name: Add the custom program bin path
+      lineinfile:
+        path: ~/.bashrc
+        line: PATH=$PATH:/opt/custombin/bin
+
+- hosts: localhost
+  gather_facts: False
+  become: yes
+  tasks:
+    - name: Create folder for custom programs
+      file:
+        path: /opt/
+        state: directory
+
+    - name: Copy custom programs
+      copy:
+        src: custombin/
+        dest: /opt/custombin/
+
+    - name: Make custom programs executable
+      file:
+        path: /opt/custombin/bin/
+        mode: 0755
+        recurse: yes
+      tags:
+        - debug
+
+    - name: add the Atom package repo signing key
+      shell: wget -qO- https://packagecloud.io/AtomEditor/atom/gpgkey | apt-key add -
+
+    - name: add the Node.js deb repository
+      shell: echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list
+
+    - name: Update cache (with no fail because on old computer some things didn't download, etc.)
+      apt:
+        update_cache: yes
+      failed_when: false
+
+    - name: Update computer
+      apt:
+        upgrade: dist
+
+    - name: Install Packages
+      apt:
+        name: "{{ item }}"
+        state: latest
+        update_cache: no
+      with_items:
+        - atom
+        - chromium-browser
+        - conky
+        - docker.io
+        - gedit-plugins
+        - giggle
+        - gimp
+        - gitk
+        - gnuplot
+        - htop
+        - inkscape
+        - isort
+        - inotify-tools
+        - lm-sensors
+        - meld
+        - meshlab
+        - nautilus-image-converter
+        - nautilus-wipe
+        - nmap
+        - parallel
+        - picocom
+        - poedit
+        - postgresql-client
+        - synaptic
+        - tftp
+        - tmux
+        - traceroute
+        - tree
+        - ttf-mscorefonts-installer
+        - ubuntu-restricted-extras
+        - vagrant
+        - wireshark
+        - whois
+        - xclip
+
+        # Install pip things
+        - python3-pip
+        - python3-dev
+        - build-essential
+        # - virtualbox-5.1
+
+        # Node things
+        - nodejs
+        - npm
+        - build-essential
+
+        # PreForm things
+        - libavahi-compat-libdnssd1
+
+        # For gnome shell system monitor applet: https://github.com/paradoxxxzero/gnome-shell-system-monitor-applet
+        - gir1.2-gtop-2.0
+        - gir1.2-networkmanager-1.0
+        - gir1.2-clutter-1.0
+
+        # For atom editor things
+        - shellcheck
+
+        - virtualbox
+
+        # System Monitor gnome extension things
+        - gir1.2-gtop-2.0
+        - gir1.2-networkmanager-1.0
+        - gir1.2-clutter-1.0
+
+    - name: Update pip
+      pip:
+        name: pip
+        state: latest
+        executable: pip3
+
+    - name: Install pip packages
+      pip:
+        name: "{{ item }}"
+        state: latest
+        executable: pip3
+      with_items:
+        - autoflake
+        - autopep8
+        - awscli
+        - flake8
+        - jupyter
+        - matplotlib
+        - mypy
+        - pyinotify
+        - pytz
+        - ansible-lint
+        - pyserial
+        - mock
+        - psycopg2
+        - pydocstyle
+
+    - name: Install Nodejs packages
+      npm:
+        name: "{{ item }}"
+        state: latest
+        global: yes
+      with_items:
+        - eslint
+        - jshint
+
+
+
+
+# PreForm things?
+# qml
+# qml-module-qtgraphicaleffects
+# qml-module-qt-labs-folderlistmodel
+# qml-module-qt-labs-settings
+# qml-module-qtqml-statemachine
+# qml-module-qtquick2
+# qml-module-qtquick-controls
+# qml-module-qtquick-dialogs
+# qml-module-qtquick-layouts
+# qml-module-qtquick-localstorage
+# qml-module-qtquick-privatewidgets
+# qml-module-qtquick-window2
+# qml-module-qtquick-xmllistmodel
+# qt5-default
+# qtdeclarative5-dev
+#
+#
