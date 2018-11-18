@@ -25,7 +25,9 @@
 # Install JIRA (Netflix)
 # Check if we need alternate tab in 18.04, or can assign the keyboard shortcut
 # Set gnome-terminal profile preferences
-
+# Run sensors detect if not already done
+# Run powertop calibration if not already done
+# Run powertop optimization if not already done
 # PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\W\[\033[00m\]\$ "
 
 
