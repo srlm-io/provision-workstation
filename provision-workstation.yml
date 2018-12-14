@@ -29,6 +29,50 @@
 # Run powertop calibration if not already done
 # Run powertop optimization if not already done
 # PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\W\[\033[00m\]\$ "
+# todo: change keyboard shortcut to switch windows (not switch applications)
+# remove thunderbird,
+# remove Amazon from the software center
+# https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+
+# gsettings set org.gnome.shell.extensions.dash-to-dock autohide false
+# gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
+# gsettings set org.gnome.shell.extensions.dash-to-dock intellihide false
+
+
+# gsettings set org.gnome.shell enable-hot-corners true
+# gsettings set org.gnome.shell.app-switcher current-workspace-only true
+# gsettings set org.gnome.gedit.plugins active-plugins "['modelines', 'spell', 'drawspaces', 'codecomment', 'docinfo']"
+# gsettings set org.gnome.gedit.preferences.editor auto-indent true
+# gsettings set org.gnome.gedit.preferences.editor bracket-matching true
+# gsettings set org.gnome.gedit.preferences.editor display-line-numbers true
+# gsettings set org.gnome.gedit.preferences.editor display-right-margin true
+# gsettings set org.gnome.gedit.preferences.editor highlight-current-line true
+# gsettings set org.gnome.gedit.preferences.editor insert-spaces true
+# gsettings set org.gnome.gedit.preferences.editor right-margin-position 120
+# gsettings set org.gnome.gedit.preferences.editor scheme oblivion
+# gsettings set org.gnome.gedit.preferences.editor tabs-size 4
+# gsettings set org.gnome.desktop.interface clock-show-date true
+# gsettings set org.gnome.desktop.interface gtk-theme Adwaita-dark
+# gsettings set org.gnome.desktop.interface icon-theme Humanity-Dark
+# gsettings set org.gnome.desktop.interface show-battery-percentage true
+# gsettings set org.gnome.desktop.calendar show-weekdate true
+# gsettings set org.gnome.desktop.privacy remember-recent-files false
+# gsettings set org.gnome.desktop.privacy remove-old-trash-files true
+# gsettings set org.gnome.eog.ui disable-close-confirmation true
+# gsettings set org.gnome.meld highlight-current-line true
+# gsettings set org.gnome.meld highlight-syntax true
+# gsettings set org.gnome.mutter attach-modal-dialogs false
+# gsettings set org.gnome.mutter dynamic-workspaces false
+# gsettings set org.gnome.mutter workspaces-only-on-primary false
+# gsettings set org.gnome.nautilus.preferences confirm-trash false
+# gsettings set org.gnome.online-accounts whitelisted-providers "[]"
+# gsettings set org.gnome.shell enable-hot-corners true
+
+
+
+
+# Atom notes:
+# Don't enable the autosave extension, since I only want to save when I leave Atom, not every tab change
 
 
 - hosts: localhost
@@ -116,13 +160,17 @@
         update_cache: no
       with_items:
         - atom
+        - chrome-gnome-shell
         - chromium-browser
         - conky
+        - dconf-editor
         - docker.io
         - gedit-plugins
         - giggle
         - gimp
-        - gitk
+        - git
+        - gitg
+        - gnome-tweak-tool
         - gnuplot
         - htop
         - inkscape
@@ -139,6 +187,7 @@
         - picocom
         - poedit
         - postgresql-client
+        - powertop
         - tftp
         - tmux
         - traceroute
@@ -146,6 +195,7 @@
         - ttf-mscorefonts-installer
         - vagrant
         - virtualbox
+        - vlc
         - wireshark
         - whois
         - xclip
@@ -229,7 +279,6 @@
       with_items:
         - git config --global submodule.recurse true
         - git config --global push.followTags true
-        - git config --global push.default upstream
         - git config --global user.name "Cody Lewis"
         # git config --global user.email ""
 
@@ -246,3 +295,4 @@
         - https://extensions.gnome.org/extension/906/sound-output-device-chooser/
         - https://extensions.gnome.org/extension/21/workspace-indicator/
         - https://extensions.gnome.org/extension/28/gtile/
+        - https://extensions.gnome.org/extension/3/bottom-panel/
