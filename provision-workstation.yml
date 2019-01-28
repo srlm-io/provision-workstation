@@ -104,7 +104,7 @@
         - alias clip="xclip -selection c"
 
         # Useful tool to get 1 line names of PRs.
-        - alias gitpoky="git --no-pager log --first-parent --format=\"%ad %H %s\" --date=short --reverse $@ | tail -n 50"
+        - alias gitpoky="git --no-pager log --first-parent --format=\"# %ad %H %s\" --date=short --reverse $@ | tail -n 50"
         - alias gitupdate="git checkout master && git pull --rebase upstream master"
 
         # Set keyboard delays (lower them!)
