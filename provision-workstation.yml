@@ -1,5 +1,6 @@
 # Here is a sample command to run this playbook:
-# ansible-playbook provision-workstation.yml  --ask-sudo-pass
+# ansible-playbook --ask-become-pass provision-workstation.yml
+
 
 # Fix the firefox input form backgrounds being grey on white
 # Put this in ~/.mozilla/firefox/<profile_dir>/chrome/userContent.css
@@ -19,56 +20,11 @@
 # https://askubuntu.com/questions/918462/ubuntu-17-04-printer-added-notifications-under-gnome
 
 # TODO:
-# Install Standard Notes
-# Install Etcher
-# Install Hub
-# Install JIRA (Netflix)
-# Check if we need alternate tab in 18.04, or can assign the keyboard shortcut
-# Set gnome-terminal profile preferences
 # Run sensors detect if not already done
 # Run powertop calibration if not already done
 # Run powertop optimization if not already done
 # PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\W\[\033[00m\]\$ "
 # todo: change keyboard shortcut to switch windows (not switch applications)
-# remove thunderbird,
-# remove Amazon from the software center
-# https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-
-# gsettings set org.gnome.shell.extensions.dash-to-dock autohide false
-# gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed false
-# gsettings set org.gnome.shell.extensions.dash-to-dock intellihide false
-
-
-# gsettings set org.gnome.shell enable-hot-corners true
-# gsettings set org.gnome.shell.app-switcher current-workspace-only true
-# gsettings set org.gnome.gedit.plugins active-plugins "['modelines', 'spell', 'drawspaces', 'codecomment', 'docinfo']"
-# gsettings set org.gnome.gedit.preferences.editor auto-indent true
-# gsettings set org.gnome.gedit.preferences.editor bracket-matching true
-# gsettings set org.gnome.gedit.preferences.editor display-line-numbers true
-# gsettings set org.gnome.gedit.preferences.editor display-right-margin true
-# gsettings set org.gnome.gedit.preferences.editor highlight-current-line true
-# gsettings set org.gnome.gedit.preferences.editor insert-spaces true
-# gsettings set org.gnome.gedit.preferences.editor right-margin-position 120
-# gsettings set org.gnome.gedit.preferences.editor scheme oblivion
-# gsettings set org.gnome.gedit.preferences.editor tabs-size 4
-# gsettings set org.gnome.desktop.interface clock-show-date true
-# gsettings set org.gnome.desktop.interface gtk-theme Adwaita-dark
-# gsettings set org.gnome.desktop.interface icon-theme Humanity-Dark
-# gsettings set org.gnome.desktop.interface show-battery-percentage true
-# gsettings set org.gnome.desktop.calendar show-weekdate true
-# gsettings set org.gnome.desktop.privacy remember-recent-files false
-# gsettings set org.gnome.desktop.privacy remove-old-trash-files true
-# gsettings set org.gnome.eog.ui disable-close-confirmation true
-# gsettings set org.gnome.meld highlight-current-line true
-# gsettings set org.gnome.meld highlight-syntax true
-# gsettings set org.gnome.mutter attach-modal-dialogs false
-# gsettings set org.gnome.mutter dynamic-workspaces false
-# gsettings set org.gnome.mutter workspaces-only-on-primary false
-# gsettings set org.gnome.nautilus.preferences confirm-trash false
-# gsettings set org.gnome.online-accounts whitelisted-providers "[]"
-# gsettings set org.gnome.shell enable-hot-corners true
-
-
 
 
 # Atom notes:
@@ -108,7 +64,7 @@
         - alias gitupdate="git checkout master && git pull --rebase upstream master"
 
         # Set keyboard delays (lower them!)
-        - xset r rate 150 60
+        # - xset r rate 150 60
 
     - name: Add lines to .nanorc
       lineinfile:
@@ -139,32 +95,50 @@
         recurse: yes
 
     - name: add the Atom package repo signing key
-      shell: wget -qO- https://packagecloud.io/AtomEditor/atom/gpgkey | apt-key add -
-
+      apt_key:
+        url: https://packagecloud.io/AtomEditor/atom/gpgkey
+        state: present
     - name: add the Atom deb repository
-      shell: echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list
+      apt_repository:
+        repo: "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main"
+        state: present
 
-    - name: Update cache (with no fail because on old computer some things didn't download, etc.)
+    - name: Add Chrome repo signing key
+      apt_key:
+        url: https://dl.google.com/linux/linux_signing_key.pub
+        state: present
+    - name: Add Chrome repository
+      apt_repository:
+        repo: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+        state: present
+
+    - name: Update cache
       apt:
         update_cache: yes
-      failed_when: false
 
     - name: Update computer
       apt:
         upgrade: dist
+
+    - name: Remove Packages
+      apt:
+        name: "{{ item }}"
+        state: absent
+        update_cache: no
+      loop:
+        - thunderbird
 
     - name: Install Packages
       apt:
         name: "{{ item }}"
         state: latest
         update_cache: no
-      with_items:
+      loop:
         - atom
-        - chrome-gnome-shell
-        - chromium-browser
         - conky
         - dconf-editor
         - docker.io
+        - gcc
         - gedit-plugins
         - giggle
         - gimp
@@ -172,11 +146,13 @@
         - gitg
         - gnome-tweak-tool
         - gnuplot
+        - google-chrome-stable
         - htop
         - inkscape
+        - inotify-tools
         - iotop
         - isort
-        - inotify-tools
+        - libpq-dev
         - lm-sensors
         - meld
         - meshlab
@@ -196,8 +172,8 @@
         - vagrant
         - virtualbox
         - vlc
-        - wireshark
         - whois
+        - wireshark
         - xclip
 
         # Install pip things
@@ -212,7 +188,7 @@
 
         # For gnome shell system monitor applet: https://github.com/paradoxxxzero/gnome-shell-system-monitor-applet
         - gir1.2-gtop-2.0
-        - gir1.2-networkmanager-1.0
+        - gir1.2-nm-1.0
         - gir1.2-clutter-1.0
 
         # For atom editor things
@@ -229,7 +205,7 @@
         name: "{{ item }}"
         state: latest
         executable: pip3
-      with_items:
+      loop:
         - ansible-lint
         - autoflake
         - autopep8
@@ -244,13 +220,14 @@
         - pyinotify
         - pyserial
         - pytz
+        - psutil
 
     - name: Install Nodejs packages
       npm:
         name: "{{ item }}"
         state: latest
         global: yes
-      with_items:
+      loop:
         - eslint
         - jshint
 
@@ -259,7 +236,7 @@
         name: "{{ user }}"
         groups: "{{ item }}"
         append: yes
-      with_items:
+      loop:
         - dialout
         - docker
 
@@ -269,6 +246,78 @@
         path: /etc/sysctl.conf
         regexp: '^fs.inotify.max_user_watches='
         line: fs.inotify.max_user_watches=1250000
+
+    - name: Check if snap is installed
+      command: "snap list"
+      register: snap_check
+      changed_when: false
+      failed_when: false
+    - name: Remove snaps
+      snap:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        # Order matters here.
+        - "chromium"
+        - "gnome-3-34-1804"
+        - "gtk-common-themes"
+        - "snap-store"
+        - "core18"
+        - "snapd"
+      when: snap_check.rc == 0
+    - name: Remove the snap package
+      apt:
+         name: "snapd"
+         state: absent
+         purge: yes
+
+    - name: Download hub
+      get_url:
+        url: https://github.com/github/hub/releases/download/v2.14.2/hub-linux-amd64-2.14.2.tgz
+        checksum: "sha256:74d95fdfb3c78c8af4e2025b04b916ad905ab99a361778500d58269847c7922d"
+        dest: /tmp/
+    - name: Extract hub
+      unarchive:
+        src: /tmp/hub-linux-amd64-2.14.2.tgz
+        dest: /tmp/
+        remote_src: yes
+        mode: 0755
+        extra_opts:
+          - "hub-linux-amd64-2.14.2/bin/hub"
+    - name: Install hub
+      command: mv /tmp/hub-linux-amd64-2.14.2/bin/hub /opt/bin/hub-2.14.2
+    - name: Set hub sym link
+      file:
+        src: '/opt/bin/hub-2.14.2'
+        dest: '/opt/bin/hub'
+        state: link
+
+
+    - name: Download and install Standard Notes
+      get_url:
+        url: https://github.com/standardnotes/desktop/releases/download/v3.4.1/Standard-Notes-3.4.1.AppImage
+        checksum: "sha256:b1be6f2c99b02d492ed1d2ba4644a83e9caa67d8cef42adb098cf5a81b2cadae"
+        dest: /opt/bin/Standard-Notes-3.4.1.AppImage
+        mode: 0755
+    - name: Set Standard Notes sym link
+      file:
+        src: '/opt/bin/Standard-Notes-3.4.1.AppImage'
+        dest: '/opt/bin/Standard-Notes'
+        state: link
+
+
+    - name: Download and install jira
+      get_url:
+        url: https://github.com/go-jira/jira/releases/download/v1.0.23/jira-linux-amd64
+        checksum: "sha256:e2550f69ed5471bf4699554ff72b4bb41445266ae3a2c02a4594cd0557dd1f2a"
+        dest: /opt/bin/jira-v1.0.23
+        mode: 0755
+    - name: Set JIRA sym link
+      file:
+        src: '/opt/bin/jira-v1.0.23'
+        dest: '/opt/bin/jira'
+        state: link
+
 
 - hosts: localhost
   gather_facts: False
@@ -290,9 +339,93 @@
         msg: "{{ item }}"
       with_items:
         - https://extensions.gnome.org/extension/120/system-monitor/
-        - https://extensions.gnome.org/extension/15/alternatetab/
-        - https://extensions.gnome.org/extension/307/dash-to-dock/
         - https://extensions.gnome.org/extension/906/sound-output-device-chooser/
         - https://extensions.gnome.org/extension/21/workspace-indicator/
         - https://extensions.gnome.org/extension/28/gtile/
-        - https://extensions.gnome.org/extension/3/bottom-panel/
+
+    - name: Pause until extensions are installed
+      pause:
+        prompt: "Please ensure that the Gnome extensions are installed"
+
+    - name: Set dconf/gsettings values
+      dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+      loop:
+        - { key: "/org/gnome/desktop/calendar/show-weekdate", value: "true" }
+        - { key: "/org/gnome/desktop/interface/clock-format", value: "'12h'" }
+        - { key: "/org/gnome/desktop/interface/clock-show-date", value: "true" }
+        - { key: "/org/gnome/desktop/interface/clock-show-weekday", value: "true" }
+        - { key: "/org/gnome/desktop/interface/enable-hot-corners", value: "true" }
+        - { key: "/org/gnome/desktop/interface/gtk-theme", value: "'Adwaita-dark'" }
+        - { key: "/org/gnome/desktop/interface/icon-theme", value: "'Humanity-Dark'" }
+        - { key: "/org/gnome/desktop/interface/show-battery-percentage", value: "true" }
+        - { key: "/org/gnome/desktop/peripherals/keyboard/delay", value: 150 }
+        - { key: "/org/gnome/desktop/peripherals/keyboard/repeat-interval", value: 16 }
+        - { key: "/org/gnome/desktop/privacy/remember-recent-files", value: "false" }
+        - { key: "/org/gnome/desktop/privacy/remove-old-trash-files", value: "true" }
+        - { key: "/org/gnome/eog/ui/disable-close-confirmation", value: "true" }
+        - { key: "/org/gnome/gedit/plugins/active-plugins", value: "['modelines', 'spell', 'drawspaces', 'codecomment', 'docinfo']" }
+        - { key: "/org/gnome/gedit/preferences/editor/auto-indent", value: "true" }
+        - { key: "/org/gnome/gedit/preferences/editor/bracket-matching", value: "true" }
+        - { key: "/org/gnome/gedit/preferences/editor/display-line-numbers", value: "true" }
+        - { key: "/org/gnome/gedit/preferences/editor/display-right-margin", value: "true" }
+        - { key: "/org/gnome/gedit/preferences/editor/highlight-current-line", value: "true" }
+        - { key: "/org/gnome/gedit/preferences/editor/insert-spaces", value: "true" }
+        - { key: "/org/gnome/gedit/preferences/editor/right-margin-position", value: 120 }
+        - { key: "/org/gnome/gedit/preferences/editor/scheme", value: "'oblivion'" }
+        - { key: "/org/gnome/gedit/preferences/editor/tabs-size", value: 4 }
+        - { key: "/org/gnome/meld/highlight-current-line", value: "true" }
+        - { key: "/org/gnome/meld/highlight-syntax", value: "true" }
+        - { key: "/org/gnome/mutter/attach-modal-dialogs", value: "false" }
+        - { key: "/org/gnome/mutter/dynamic-workspaces", value: "false" }
+        - { key: "/org/gnome/mutter/workspaces-only-on-primary", value: "false" }
+        - { key: "/org/gnome/nautilus/compression/default-compression-format", value: "'tar.xz'" }
+        - { key: "/org/gnome/nautilus/preferences/confirm-trash", value: "false" }
+        - { key: "/org/gnome/online-accounts/whitelisted-providers", value: "'[]'" }
+        - { key: "/org/gnome/shell/app-switcher/current-workspace-only", value: "true" }
+        - { key: "/org/gnome/shell/extensions/dash-to-dock/autohide", value: "true" }
+        - { key: "/org/gnome/shell/extensions/desktop-icons/show-home", value: "false" }
+        - { key: "/org/gnome/shell/extensions/desktop-icons/show-trash", value: "false" }
+        - { key: "/org/gnome/system/location/enabled", value: "false" }
+        - { key: "/org/gnome/Terminal/ProfilesList/default", value: "'982f2a62-6109-4149-9671-0c552d85ea5b'" }
+        - { key: "/org/gnome/Terminal/ProfilesList/list", value: "['982f2a62-6109-4149-9671-0c552d85ea5b']" }
+
+    - name: Set super special dconf/gsettings values
+      shell: "{{ item }}"
+      loop:
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ audible-bell false
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ default-size-columns 120
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ default-size-rows 40
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ scrollback-unlimited true
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ visible-name 'srlm'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile grid-sizes '6x4'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize1 '3x2 0:0 0:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize2 '3x2 1:0 1:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize3 '3x2 2:0 2:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize4 '3x2 0:0 0:0'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize5 '3x2 1:0 1:0'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize6 '3x2 2:0 2:0'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize7 '3x2 0:0 1:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize8 '3x2 1:1 1:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize9 '3x2 1:0 2:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-1 "['<Primary><Shift><Alt>o']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-2 "['<Primary><Shift><Alt>e']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-3 "['<Primary><Shift><Alt>u']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-4 "['<Primary><Shift><Alt>less']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-5 "['<Primary><Shift><Alt>greater']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-6 "['<Primary><Shift><Alt>p']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-7 "['<Primary><Shift><Alt>q']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-8 "['<Primary><Shift><Alt>j']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-9 "['<Primary><Shift><Alt>k']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-graph-width 300
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-refresh-time 1000
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-show-text false
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-style 'graph'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor icon-display false
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor memory-graph-width 300
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor memory-refresh-time 1000
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor memory-show-text false
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor net-graph-width 300
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor net-refresh-time 1000
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor net-show-text false
