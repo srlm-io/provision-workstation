@@ -1,18 +1,5 @@
 # Here is a sample command to run this playbook:
 # ansible-playbook --ask-become-pass provision-workstation.yml
-
-
-# Fix the firefox input form backgrounds being grey on white
-# Put this in ~/.mozilla/firefox/<profile_dir>/chrome/userContent.css
-# input:not(.urlbar-input):not(.textbox-input):not(.form-control):not([type='checkbox']):not([type='radio']), textarea, select {
-#     -moz-appearance: none !important;
-#     background-color: white;
-#     color: black;
-# }
-
-# #downloads-indicator-counter {
-#     color: white;
-# }
 #
 #
 # Stop the stupid printer notifications:
@@ -23,13 +10,25 @@
 # Run sensors detect if not already done
 # Run powertop calibration if not already done
 # Run powertop optimization if not already done
-# PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;34m\]\W\[\033[00m\]\$ "
 # todo: change keyboard shortcut to switch windows (not switch applications)
 
 
 # Atom notes:
 # Don't enable the autosave extension, since I only want to save when I leave Atom, not every tab change
 
+
+
+# 20.04
+# Disable tracker miner
+#  https://www.linuxuprising.com/2019/07/how-to-completely-disable-tracker.html
+#  https://askubuntu.com/questions/346211/tracker-store-and-tracker-miner-fs-eating-up-my-cpu-on-every-startup
+#
+# Install Display Link Driver
+#
+# APM install sync-settings
+#
+#
+# Chrome also installs key?
 
 - hosts: localhost
   gather_facts: False
@@ -135,6 +134,7 @@
         update_cache: no
       loop:
         - atom
+        - chrome-gnome-shell
         - conky
         - dconf-editor
         - docker.io
@@ -347,68 +347,12 @@
       pause:
         prompt: "Please ensure that the Gnome extensions are installed"
 
-    - name: Set dconf/gsettings values
-      dconf:
-        key: "{{ item.key }}"
-        value: "{{ item.value }}"
-      loop:
-        - { key: "/org/gnome/desktop/calendar/show-weekdate", value: "true" }
-        - { key: "/org/gnome/desktop/interface/clock-format", value: "'12h'" }
-        - { key: "/org/gnome/desktop/interface/clock-show-date", value: "true" }
-        - { key: "/org/gnome/desktop/interface/clock-show-weekday", value: "true" }
-        - { key: "/org/gnome/desktop/interface/enable-hot-corners", value: "true" }
-        - { key: "/org/gnome/desktop/interface/gtk-theme", value: "'Adwaita-dark'" }
-        - { key: "/org/gnome/desktop/interface/icon-theme", value: "'Humanity-Dark'" }
-        - { key: "/org/gnome/desktop/interface/show-battery-percentage", value: "true" }
-        - { key: "/org/gnome/desktop/peripherals/keyboard/delay", value: 150 }
-        - { key: "/org/gnome/desktop/peripherals/keyboard/repeat-interval", value: 16 }
-        - { key: "/org/gnome/desktop/privacy/remember-recent-files", value: "false" }
-        - { key: "/org/gnome/desktop/privacy/remove-old-trash-files", value: "true" }
-        - { key: "/org/gnome/eog/ui/disable-close-confirmation", value: "true" }
-        - { key: "/org/gnome/gedit/plugins/active-plugins", value: "['modelines', 'spell', 'drawspaces', 'codecomment', 'docinfo']" }
-        - { key: "/org/gnome/gedit/preferences/editor/auto-indent", value: "true" }
-        - { key: "/org/gnome/gedit/preferences/editor/bracket-matching", value: "true" }
-        - { key: "/org/gnome/gedit/preferences/editor/display-line-numbers", value: "true" }
-        - { key: "/org/gnome/gedit/preferences/editor/display-right-margin", value: "true" }
-        - { key: "/org/gnome/gedit/preferences/editor/highlight-current-line", value: "true" }
-        - { key: "/org/gnome/gedit/preferences/editor/insert-spaces", value: "true" }
-        - { key: "/org/gnome/gedit/preferences/editor/right-margin-position", value: 120 }
-        - { key: "/org/gnome/gedit/preferences/editor/scheme", value: "'oblivion'" }
-        - { key: "/org/gnome/gedit/preferences/editor/tabs-size", value: 4 }
-        - { key: "/org/gnome/meld/highlight-current-line", value: "true" }
-        - { key: "/org/gnome/meld/highlight-syntax", value: "true" }
-        - { key: "/org/gnome/mutter/attach-modal-dialogs", value: "false" }
-        - { key: "/org/gnome/mutter/dynamic-workspaces", value: "false" }
-        - { key: "/org/gnome/mutter/workspaces-only-on-primary", value: "false" }
-        - { key: "/org/gnome/nautilus/compression/default-compression-format", value: "'tar.xz'" }
-        - { key: "/org/gnome/nautilus/preferences/confirm-trash", value: "false" }
-        - { key: "/org/gnome/online-accounts/whitelisted-providers", value: "'[]'" }
-        - { key: "/org/gnome/shell/app-switcher/current-workspace-only", value: "true" }
-        - { key: "/org/gnome/shell/extensions/dash-to-dock/autohide", value: "true" }
-        - { key: "/org/gnome/shell/extensions/desktop-icons/show-home", value: "false" }
-        - { key: "/org/gnome/shell/extensions/desktop-icons/show-trash", value: "false" }
-        - { key: "/org/gnome/system/location/enabled", value: "false" }
-        - { key: "/org/gnome/Terminal/ProfilesList/default", value: "'982f2a62-6109-4149-9671-0c552d85ea5b'" }
-        - { key: "/org/gnome/Terminal/ProfilesList/list", value: "['982f2a62-6109-4149-9671-0c552d85ea5b']" }
-
-    - name: Set super special dconf/gsettings values
+    # Use the gsettings command because the Ansible dconf role seems to put some values into a "shadow" register,
+    # rather than the actual key that the dconf GUI sees. It might be tied to the handling of strings, etc.
+    - name: Set gsettings values
       shell: "{{ item }}"
       loop:
-        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ audible-bell false
-        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ default-size-columns 120
-        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ default-size-rows 40
-        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ scrollback-unlimited true
-        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ visible-name 'srlm'
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile grid-sizes '6x4'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize1 '3x2 0:0 0:1'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize2 '3x2 1:0 1:1'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize3 '3x2 2:0 2:1'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize4 '3x2 0:0 0:0'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize5 '3x2 1:0 1:0'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize6 '3x2 2:0 2:0'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize7 '3x2 0:0 1:1'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize8 '3x2 1:1 1:1'
-        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize9 '3x2 1:0 2:1'
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-1 "['<Primary><Shift><Alt>o']"
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-2 "['<Primary><Shift><Alt>e']"
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-3 "['<Primary><Shift><Alt>u']"
@@ -418,6 +362,15 @@
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-7 "['<Primary><Shift><Alt>q']"
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-8 "['<Primary><Shift><Alt>j']"
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile preset-resize-9 "['<Primary><Shift><Alt>k']"
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize1 '3x2 0:0 0:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize2 '3x2 1:0 1:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize3 '3x2 2:0 2:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize4 '3x2 0:0 0:0'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize5 '3x2 1:0 1:0'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize6 '3x2 2:0 2:0'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize7 '3x2 0:0 1:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize8 '3x2 1:1 1:1'
+        - gsettings --schemadir ~/.local/share/gnome-shell/extensions/gTile@vibou/schemas/ set org.gnome.shell.extensions.gtile resize9 '3x2 1:0 2:1'
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-graph-width 300
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-refresh-time 1000
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor cpu-show-text false
@@ -429,3 +382,48 @@
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor net-graph-width 300
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor net-refresh-time 1000
         - gsettings --schemadir ~/.local/share/gnome-shell/extensions/system-monitor@paradoxxx.zero.gmail.com/schemas/ set org.gnome.shell.extensions.system-monitor net-show-text false
+        - gsettings set org.gnome.desktop.calendar show-weekdate true
+        - gsettings set org.gnome.desktop.interface clock-format '12h'
+        - gsettings set org.gnome.desktop.interface clock-show-date true
+        - gsettings set org.gnome.desktop.interface clock-show-weekday true
+        - gsettings set org.gnome.desktop.interface enable-hot-corners true
+        - gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+        - gsettings set org.gnome.desktop.interface icon-theme 'Humanity-Dark'
+        - gsettings set org.gnome.desktop.interface show-battery-percentage true
+        - gsettings set org.gnome.desktop.peripherals.keyboard delay 150
+        - gsettings set org.gnome.desktop.peripherals.keyboard repeat-interval 16
+        - gsettings set org.gnome.desktop.privacy remember-recent-files false
+        - gsettings set org.gnome.desktop.privacy remove-old-trash-files true
+        - gsettings set org.gnome.eog.ui disable-close-confirmation true
+        - gsettings set org.gnome.gedit.plugins active-plugins "['modelines', 'spell', 'drawspaces', 'codecomment', 'docinfo']"
+        - gsettings set org.gnome.gedit.preferences.editor auto-indent true
+        - gsettings set org.gnome.gedit.preferences.editor bracket-matching true
+        - gsettings set org.gnome.gedit.preferences.editor display-line-numbers true
+        - gsettings set org.gnome.gedit.preferences.editor display-right-margin true
+        - gsettings set org.gnome.gedit.preferences.editor highlight-current-line true
+        - gsettings set org.gnome.gedit.preferences.editor insert-spaces true
+        - gsettings set org.gnome.gedit.preferences.editor right-margin-position 120
+        - gsettings set org.gnome.gedit.preferences.editor scheme 'oblivion'
+        - gsettings set org.gnome.gedit.preferences.editor tabs-size 4
+        - gsettings set org.gnome.meld highlight-current-line true
+        - gsettings set org.gnome.meld highlight-syntax true
+        - gsettings set org.gnome.mutter attach-modal-dialogs false
+        - gsettings set org.gnome.mutter dynamic-workspaces false
+        - gsettings set org.gnome.mutter workspaces-only-on-primary false
+        - gsettings set org.gnome.nautilus.compression default-compression-format 'tar.xz'
+        - gsettings set org.gnome.nautilus.preferences confirm-trash false
+        - gsettings set org.gnome.online-accounts whitelisted-providers '[]'
+        - gsettings set org.gnome.shell.app-switcher current-workspace-only true
+        - gsettings set org.gnome.shell.extensions.dash-to-dock autohide true
+        - gsettings set org.gnome.shell.extensions.desktop-icons show-home false
+        - gsettings set org.gnome.shell.extensions.desktop-icons show-trash false
+        - gsettings set org.gnome.system.location enabled false
+
+        # Not sure if these need to be ordered, but let's do it anyway to be safe.
+        - gsettings set org.gnome.Terminal.ProfilesList list "['982f2a62-6109-4149-9671-0c552d85ea5b']"
+        - gsettings set org.gnome.Terminal.ProfilesList default "'982f2a62-6109-4149-9671-0c552d85ea5b'"
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ audible-bell false
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ default-size-columns 120
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ default-size-rows 40
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ scrollback-unlimited true
+        - gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:982f2a62-6109-4149-9671-0c552d85ea5b/ visible-name 'srlm'
