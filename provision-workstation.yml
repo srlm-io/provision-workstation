@@ -28,7 +28,8 @@
 # APM install sync-settings
 #
 #
-# Chrome also installs key?
+# Chrome also installs key and sources.list.d??
+# Inkscape 1.0: https://inkscape.org/release/inkscape-1.0/gnulinux/ubuntu/ppa/dl/
 
 - hosts: localhost
   gather_facts: False
